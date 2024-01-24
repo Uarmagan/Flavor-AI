@@ -1,4 +1,5 @@
 import type { MetaFunction } from '@remix-run/node';
+import { Input } from '@/components/ui/input';
 
 export const meta: MetaFunction = () => {
   return [
@@ -34,6 +35,9 @@ export default function Index() {
           <a target='_blank' href='https://remix.run/docs' rel='noreferrer'>
             Remix Docs
           </a>
+        </li>
+        <li>
+          <Input type='text' placeholder='test' />
         </li>
       </ul>
     </div>
