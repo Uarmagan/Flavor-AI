@@ -1,7 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { ActionFunction, MetaFunction, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
-import { fetchRecipePage, extractRecipeDataFromHTML } from 'utils/scraper';
+import { fetchRecipePage, extractRecipeDataFromHTML } from '~/utils/scraper';
 
 // The action function that processes a submitted recipe URL and saves the recipe data.
 export const action: ActionFunction = async ({ request }) => {
@@ -35,10 +35,10 @@ export default function Index() {
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
       <h1 className='scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl"'>
-        <span>Flavor</span> Recipe Scraper
+        <span className='font-oswald'>Flavor</span> Recipe Scraper
       </h1>
       <Form
-        className='flex w-full max-w-sm items-center space-x-2'
+        className='flex w-full max-w-sm items-center space-x-2 '
         method='POST'
       >
         {/* The name attribute is crucial for the action to identify the field */}

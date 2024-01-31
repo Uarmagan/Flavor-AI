@@ -1,0 +1,7 @@
+@font-face {
+  font-display: swap;
+  font-family: 'Oswald SemiBold';
+  font-style: semi-bold;
+  font-weight: 600;
+  src: url('/fonts/Oswald-SemiBold.ttf') format('ttf');
+}
