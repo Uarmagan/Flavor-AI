@@ -1,4 +1,3 @@
-import { LoaderFunctionArgs, json } from '@remix-run/node';
 import { Cheerio, Element, load } from 'cheerio';
 
 interface Recipe {
@@ -27,7 +26,7 @@ interface RecipeInstructionJSONLD {
 }
 
 // Fetch the HTML content of a recipe page.
-async function fetchRecipePage(url: string): Promise<string> {
+export async function fetchRecipePage(url: string): Promise<string> {
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -39,7 +38,7 @@ async function fetchRecipePage(url: string): Promise<string> {
 }
 
 // Find and return the JSON-LD data for a recipe within a set of script tags.
-function findRecipeJsonLd(
+export function findRecipeJsonLd(
   scriptTags: Cheerio<Element>
 ): PartialRecipeJSONLD | null {
   for (const scriptTag of scriptTags.toArray()) {
@@ -67,7 +66,7 @@ function findRecipeJsonLd(
 }
 
 // Extract the recipe data from the HTML content of a webpage.
-function extractRecipeDataFromHTML(html: string): Recipe | null {
+export function extractRecipeDataFromHTML(html: string): Recipe | null {
   const $ = load(html);
   const scriptTags = $('script[type="application/ld+json"]');
   const recipeJson = findRecipeJsonLd(scriptTags);
@@ -76,7 +75,7 @@ function extractRecipeDataFromHTML(html: string): Recipe | null {
 }
 
 // Convert the JSON-LD recipe data into a Recipe object.
-function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
+export function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
   return {
     name: jsonData.name,
     description: jsonData.description,
@@ -87,23 +86,4 @@ function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
       typeof instruction === 'string' ? instruction : instruction.text
     ),
   };
-}
-
-// The loader function that processes a recipe URL and returns the recipe data.
-export async function loader({ request }: LoaderFunctionArgs) {
-  const url = new URL(request.url);
-  const recipeUrl = url.searchParams.get('url');
-
-  if (!recipeUrl) {
-    throw new Error('No recipe URL provided');
-  }
-
-  const htmlContent = await fetchRecipePage(recipeUrl);
-  const recipeData = extractRecipeDataFromHTML(htmlContent);
-
-  if (!recipeData) {
-    throw new Error('Recipe data not found');
-  }
-
-  return json(recipeData);
 }
