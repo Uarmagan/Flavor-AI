@@ -9,7 +9,7 @@ import {
   ScrollRestoration,
 } from '@remix-run/react';
 
-import styles from './styles/tailwind.css';
+import styles from './styles/global.css';
 
 export const links: LinksFunction = () => [
   { rel: 'stylesheet', href: styles },
@@ -26,7 +26,9 @@ export default function App() {
         <Links />
       </head>
       <body>
-        <Outlet />
+        <div className='mx-auto max-w-7xl sm:px-6 lg:px-8 flex justify-center items-center h-screen'>
+          <Outlet />
+        </div>
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
