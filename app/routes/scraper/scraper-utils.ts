@@ -37,7 +37,6 @@ export async function fetchRecipePage(url: string): Promise<string> {
   }
 }
 
-// Find and return the JSON-LD data for a recipe within a set of script tags.
 export function findRecipeJsonLd(
   scriptTags: Cheerio<Element>
 ): PartialRecipeJSONLD | null {
@@ -47,12 +46,23 @@ export function findRecipeJsonLd(
       if (childNode && childNode.type === 'text') {
         const textNodeData = childNode.data as string;
         const parsedJson = JSON.parse(textNodeData);
+        console.log('parsedJson:', parsedJson);
+        // Directly check if the parsedJson is a Recipe
+        if (parsedJson['@type'] === 'Recipe') {
+          console.log('Directly found Recipe type JSON-LD');
+          return parsedJson as PartialRecipeJSONLD;
+        }
+
+        // Check for an array or @graph only if the direct check fails
         if (Array.isArray(parsedJson) || parsedJson['@graph']) {
           const recipeJsonArray = Array.isArray(parsedJson)
             ? parsedJson
             : parsedJson['@graph'];
           for (const item of recipeJsonArray) {
-            if (item['@type'] === 'Recipe') {
+            if (
+              item['@type'] === 'Recipe' ||
+              item['@type'].includes('Recipe')
+            ) {
               return item as PartialRecipeJSONLD;
             }
           }
@@ -76,10 +86,20 @@ export function extractRecipeDataFromHTML(html: string): Recipe | null {
 
 // Convert the JSON-LD recipe data into a Recipe object.
 export function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
+  let imageUrl = '';
+  console.log('jsonData:', jsonData);
+  if (Array.isArray(jsonData.image) && jsonData.image.length > 0) {
+    imageUrl = jsonData.image[0].url;
+  } else if (jsonData?.image?.url) {
+    imageUrl = jsonData.image.url;
+  } else {
+    imageUrl = jsonData.thumbnailUrl ?? '';
+  }
+
   return {
     name: jsonData.name,
     description: jsonData.description,
-    imageUrl: jsonData.thumbnailUrl ?? jsonData.image?.url ?? '',
+    imageUrl,
     url: jsonData.url,
     ingredients: jsonData.recipeIngredient,
     instructions: jsonData.recipeInstructions.map((instruction) =>

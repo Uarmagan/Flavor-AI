@@ -26,7 +26,7 @@ export default function App() {
         <Links />
       </head>
       <body>
-        <div className='mx-auto max-w-7xl sm:px-6 lg:px-8 flex justify-center items-center h-screen'>
+        <div className='mx-auto max-w-7xl sm:px-6 lg:px-8 h-screen'>
           <Outlet />
         </div>
         <ScrollRestoration />

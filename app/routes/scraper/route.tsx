@@ -1,5 +1,5 @@
 import { ActionFunction, MetaFunction, redirect } from '@remix-run/node';
-import { Form } from '@remix-run/react';
+import { Form, useNavigation } from '@remix-run/react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 
@@ -23,27 +23,31 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
+  const navigation = useNavigation();
+  const isScraping = navigation.formData?.get('intent') === 'scrape-recipe';
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
-      <h1 className='scroll-m-20 text-4xl font-extrabold  font-oswald'>
-        Flavor.ly
-      </h1>
-      <h2 className='text-2xl font-bold mb-1'>The Recipe Scraper</h2>
-      <Form
-        className='flex w-full max-w-sm items-center space-x-2 '
-        method='POST'
-      >
-        {/* The name attribute is crucial for the action to identify the field */}
-        <Input type='text' placeholder='Enter recipe URL' name='url' />
-        <Button
-          type='submit'
-          className=' bg-orange-500 text-white hover:bg-orange-400'
-          name='intent'
-          value='scrape-recipe'
-        >
-          Submit
-        </Button>
-      </Form>
+    <div className='flex items-center justify-center h-screen'>
+      <div className='flex flex-col items-start mx-auto'>
+        <h2 className='text-2xl font-bold mb-4 font-oswald'>
+          The Recipe Scraper
+        </h2>
+        <Form className='w-full flex gap-x-2 ' method='POST'>
+          <Input
+            type='text'
+            placeholder='Enter Recipe URL'
+            name='url'
+            className='w-[400px] tracking-wide'
+          />
+          <Button
+            type='submit'
+            className='bg-orange-500 text-white hover:bg-orange-400 px-4'
+            name='intent'
+            value='scrape-recipe'
+          >
+            {isScraping ? 'scraping the data...' : 'Submit'}
+          </Button>
+        </Form>
+      </div>
     </div>
   );
 }
