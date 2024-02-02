@@ -1,5 +1,5 @@
 import { ActionFunction, MetaFunction, redirect } from '@remix-run/node';
-import { Form, Outlet, useNavigation } from '@remix-run/react';
+import { Form } from '@remix-run/react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 
@@ -12,7 +12,7 @@ export const action: ActionFunction = async ({ request }) => {
   if (!recipeUrl) {
     throw new Error('No recipe URL provided');
   }
-  return redirect('/recipe?url=' + recipeUrl);
+  return redirect('/scraper/recipe?url=' + recipeUrl);
 };
 
 export const meta: MetaFunction = () => {
@@ -44,10 +44,6 @@ export default function Index() {
           Submit
         </Button>
       </Form>
-
-      <div>
-        <Outlet />
-      </div>
     </div>
   );
 }
