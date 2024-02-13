@@ -54,7 +54,7 @@ export default function RecipeRoute() {
           </CardHeader>
           <CardContent className='text-sm'>
             <ul className='list-disc list-inside'>
-              {recipeData.ingredients.map(
+              {recipeData.ingredients?.map(
                 (ingredient: string, index: number) => (
                   <li key={index}>{ingredient}</li>
                 )
