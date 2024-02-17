@@ -28,6 +28,11 @@ interface Instruction {
   position?: number;
   name?: string;
   url?: string;
+  itemListElement?: {
+    '@type': string;
+    text: string;
+    position: number;
+  }[];
 }
 
 interface AggregateRating {
@@ -107,11 +112,24 @@ export function extractRecipeDataFromHTML(html: string): Recipe | null {
 export function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
   const imageUrl = determineImageUrl(jsonData.image, jsonData.thumbnailUrl);
   const instructions =
-    jsonData.recipeInstructions?.map((instruction) =>
-      typeof instruction === 'string'
-        ? decodeHtmlEntities(instruction)
-        : instruction.text
-    ) ?? [];
+    jsonData.recipeInstructions?.flatMap((instruction) => {
+      if (typeof instruction === 'string') {
+        return decodeHtmlEntities(instruction);
+      } else if (instruction['@type'] === 'HowToSection') {
+        return (
+          instruction.itemListElement?.map((item) => {
+            return decodeHtmlEntities(item.text);
+          }) ?? []
+        );
+      } else if (
+        typeof instruction === 'object' &&
+        instruction['@type'] === 'HowToStep'
+      ) {
+        // Now TypeScript knows that instruction is an object with a 'text' property
+        return decodeHtmlEntities(instruction.text);
+      }
+      return [];
+    }) ?? [];
 
   const ingredients = jsonData.recipeIngredient?.map(decodeHtmlEntities) ?? [];
   const description = decodeHtmlEntities(jsonData.description);
