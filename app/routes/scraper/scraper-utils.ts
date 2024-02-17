@@ -108,16 +108,20 @@ export function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
   const imageUrl = determineImageUrl(jsonData.image, jsonData.thumbnailUrl);
   const instructions =
     jsonData.recipeInstructions?.map((instruction) =>
-      typeof instruction === 'string' ? instruction : instruction.text
+      typeof instruction === 'string'
+        ? decodeHtmlEntities(instruction)
+        : instruction.text
     ) ?? [];
 
-  const ingredients = jsonData.recipeIngredient ?? [];
+  const ingredients = jsonData.recipeIngredient?.map(decodeHtmlEntities) ?? [];
+  const description = decodeHtmlEntities(jsonData.description);
 
   return {
     ...jsonData,
+    description,
     imageUrl,
     instructions,
-    ingredients, // Add this line to include the ingredients property
+    ingredients,
   };
 }
 
@@ -142,4 +146,15 @@ function determineImageUrl(
   } else {
     return fallbackUrl ?? '';
   }
+}
+
+// Helper function to decode HTML entities in a string
+function decodeHtmlEntities(str: string) {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#8211;/g, '-')
+    .replace(/&hellip;/g, '…')
+    .replace(/&#039;/g, "'");
 }
