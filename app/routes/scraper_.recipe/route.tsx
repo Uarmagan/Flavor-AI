@@ -50,11 +50,11 @@ export default function RecipeRoute() {
           </div>
         )}
       </div>
-      <div className='grid gap-6 md:grid-cols-3 mt-5'>
-        <div className='col-span-1'>
-          <h3 className='text-xl font-bold mb-4'>Ingredients</h3>
-          <Card className='h-full w-full pt-4 border-gray-800'>
-            <CardContent className='text-sm'>
+      <div className='grid lg:gap-8 gap-20 md:grid-cols-2'>
+        <div className='col-span-1 md:col-span-2 lg:col-span-1'>
+          <h3 className='text-xl font-bold mb-2'>Ingredients</h3>
+          <Card className='h-full w-full pt-4 my-4 border-gray-800'>
+            <CardContent className='text-sm pb-0'>
               <ul className='list-inside space-y-4'>
                 {recipeData.ingredients?.map(
                   (ingredient: string, index: number) => (
@@ -65,9 +65,9 @@ export default function RecipeRoute() {
             </CardContent>
           </Card>
         </div>
-        <div className='col-span-2'>
-          <h3 className='text-xl font-bold'>Instructions</h3>
-          <div className='h-full w-full py-4 '>
+        <div className='col-span-1 md:col-span-2 lg:col-span-1 '>
+          <h3 className='text-xl font-bold mb-2'>Instructions</h3>
+          <div className='h-full w-full py-4 my-4'>
             <div className='text-sm'>
               <ol className='list-decimal list-inside space-y-4'>
                 {recipeData.instructions.map(

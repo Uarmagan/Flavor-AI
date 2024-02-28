@@ -1,4 +1,5 @@
 import { load, type Cheerio, type Element } from 'cheerio';
+import RecipeRoute from '../scraper_.recipe/route';
 
 interface BaseRecipe {
   name: string;
@@ -114,36 +115,32 @@ export function extractRecipeDataFromHTML(html: string): Recipe | null {
 // Function to parse JSON-LD data into a full Recipe object
 export function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
   const imageUrl = determineImageUrl(jsonData.image, jsonData.thumbnailUrl);
-  const instructions =
-    jsonData.recipeInstructions?.flatMap((instruction) => {
-      if (typeof instruction === 'string') {
-        return decodeHtmlEntities(instruction);
-      } else if (instruction['@type'] === 'HowToSection') {
-        return (
-          instruction.itemListElement?.map((item) => {
-            return decodeHtmlEntities(item.text);
-          }) ?? []
-        );
-      } else if (
-        typeof instruction === 'object' &&
-        instruction['@type'] === 'HowToStep'
-      ) {
-        // Now TypeScript knows that instruction is an object with a 'text' property
-        return decodeHtmlEntities(instruction.text);
-      }
-      return [];
-    }) ?? [];
+
+  // Flatten the recipeInstructions array to handle double arrays
+  const flattenedInstructions = jsonData.recipeInstructions?.flat() ?? [];
+
+  const instructions = flattenedInstructions.flatMap((instruction) => {
+    if (typeof instruction === 'string') {
+      return decodeHtmlEntities(instruction);
+    } else if (instruction['@type'] === 'HowToSection') {
+      return (
+        instruction.itemListElement?.map((item) => {
+          return decodeHtmlEntities(item.text);
+        }) ?? []
+      );
+    } else if (
+      typeof instruction === 'object' &&
+      instruction['@type'] === 'HowToStep'
+    ) {
+      // Now TypeScript knows that instruction is an object with a 'text' property
+      return decodeHtmlEntities(instruction.text);
+    }
+    return [];
+  });
 
   const ingredients = jsonData.recipeIngredient?.map(decodeHtmlEntities) ?? [];
   const description = decodeHtmlEntities(jsonData.description);
-  console.log({
-    name: jsonData.name,
-    keywords: jsonData.keywords,
-    description,
-    imageUrl,
-    instructions,
-    ingredients,
-  });
+
   return {
     name: jsonData.name,
     keywords: jsonData.keywords,
