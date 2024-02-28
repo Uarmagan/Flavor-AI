@@ -4,7 +4,8 @@ import {
   extractRecipeDataFromHTML,
 } from '../scraper/scraper-utils';
 import { useLoaderData } from '@remix-run/react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Card, CardContent } from '~/components/ui/card';
+import { AspectRatio } from '~/components/ui/aspect-ratio';
 
 export const loader: LoaderFunction = async ({ request }) => {
   const urlPath = new URL(request.url);
@@ -24,58 +25,60 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 export default function RecipeRoute() {
   const recipeData = useLoaderData<typeof loader>();
-  console.log(recipeData);
 
   return (
     <div className='grid gap-6 p-4 md:p-6'>
-      <h1 className='text-3xl font-bold tracking-tighter md:text-4xl'>
-        {recipeData.name}
-      </h1>
-      {recipeData.imageUrl && (
-        <img
-          alt='Delicious Pasta'
-          className='object-cover w-full h-64 rounded-lg'
-          height={400}
-          src={recipeData.imageUrl}
-          style={{
-            aspectRatio: '500/400',
-            objectFit: 'cover',
-          }}
-          width={500}
-        />
-      )}
-      <p className='text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400'>
-        {recipeData.description}
-      </p>
-      <div className='grid gap-6 md:grid-cols-3'>
-        <Card className='h-full w-full md:col-span-1'>
-          <CardHeader>
-            <CardTitle>Ingredients</CardTitle>
-          </CardHeader>
-          <CardContent className='text-sm'>
-            <ul className='list-disc list-inside'>
-              {recipeData.ingredients?.map(
-                (ingredient: string, index: number) => (
-                  <li key={index}>{ingredient}</li>
-                )
-              )}
-            </ul>
-          </CardContent>
-        </Card>
-        <Card className='h-full w-full md:col-span-2'>
-          <CardHeader>
-            <CardTitle>Instructions</CardTitle>
-          </CardHeader>
-          <CardContent className='text-sm'>
-            <ol className='list-decimal list-inside'>
-              {recipeData.instructions.map(
-                (instruction: string, index: number) => (
-                  <li key={index}>{instruction}</li>
-                )
-              )}
-            </ol>
-          </CardContent>
-        </Card>
+      <div className='flex gap-4 pt-8'>
+        <div className='flex-1'>
+          <h1 className='text-3xl font-bold tracking-tighter md:text-4xl'>
+            {recipeData.name}
+          </h1>
+          <p className='text-gray-900 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400 text-balance mt-6'>
+            {recipeData.description}
+          </p>
+        </div>
+        {recipeData.imageUrl && (
+          <div className='h-full flex-1'>
+            <AspectRatio ratio={16 / 9} className='flex-1'>
+              <img
+                alt='Delicious Pasta'
+                className='object-cover inset-0 rounded-lg w-full h-full'
+                src={recipeData.imageUrl}
+                width={400}
+              />
+            </AspectRatio>
+          </div>
+        )}
+      </div>
+      <div className='grid gap-6 md:grid-cols-3 mt-5'>
+        <div className='col-span-1'>
+          <h3 className='text-xl font-bold mb-4'>Ingredients</h3>
+          <Card className='h-full w-full pt-4 border-gray-800'>
+            <CardContent className='text-sm'>
+              <ul className='list-inside space-y-4'>
+                {recipeData.ingredients?.map(
+                  (ingredient: string, index: number) => (
+                    <li key={index}>{ingredient}</li>
+                  )
+                )}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+        <div className='col-span-2'>
+          <h3 className='text-xl font-bold'>Instructions</h3>
+          <div className='h-full w-full py-4 '>
+            <div className='text-sm'>
+              <ol className='list-decimal list-inside space-y-4'>
+                {recipeData.instructions.map(
+                  (instruction: string, index: number) => (
+                    <li key={index}>{instruction}</li>
+                  )
+                )}
+              </ol>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

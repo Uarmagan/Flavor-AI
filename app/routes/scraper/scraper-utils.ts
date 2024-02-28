@@ -11,7 +11,10 @@ interface ImageObject {
   url: string;
 }
 
-interface Recipe extends BaseRecipe {
+interface Recipe {
+  name: string;
+  description: string;
+  url: string;
   imageUrl: string;
   ingredients: string[];
   instructions: (string | Instruction)[];
@@ -133,9 +136,18 @@ export function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
 
   const ingredients = jsonData.recipeIngredient?.map(decodeHtmlEntities) ?? [];
   const description = decodeHtmlEntities(jsonData.description);
-
+  console.log({
+    name: jsonData.name,
+    keywords: jsonData.keywords,
+    description,
+    imageUrl,
+    instructions,
+    ingredients,
+  });
   return {
-    ...jsonData,
+    name: jsonData.name,
+    keywords: jsonData.keywords,
+    url: jsonData.url,
     description,
     imageUrl,
     instructions,
@@ -146,30 +158,32 @@ export function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
 // Helper function to determine the image URL from various formats
 function determineImageUrl(
   imageProp: string | string[] | ImageObject | ImageObject[] | undefined,
-  fallbackUrl: string | undefined
+  fallbackUrl?: string
 ): string {
   if (Array.isArray(imageProp)) {
-    const validImage = imageProp.find(
-      (img) => typeof img === 'string' || (typeof img === 'object' && img.url)
-    );
-    return validImage
-      ? typeof validImage === 'string'
-        ? validImage
-        : validImage.url
-      : '';
-  } else if (typeof imageProp === 'string') {
-    return imageProp;
-  } else if (typeof imageProp === 'object' && imageProp.url) {
-    return imageProp.url;
-  } else {
-    return fallbackUrl ?? '';
+    for (const img of imageProp) {
+      if (typeof img === 'string' || (img as ImageObject)?.url) {
+        return typeof img === 'string' ? img : (img as ImageObject).url;
+      }
+    }
   }
+
+  if (typeof imageProp === 'string') {
+    return imageProp;
+  }
+
+  if ((imageProp as ImageObject)?.url) {
+    return (imageProp as ImageObject).url;
+  }
+
+  return fallbackUrl ?? '';
 }
 
 // Helper function to decode HTML entities in a string
 function decodeHtmlEntities(str: string) {
   return str
     .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&#8211;/g, '-')
