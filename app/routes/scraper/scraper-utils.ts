@@ -1,5 +1,4 @@
 import { load, type Cheerio, type Element } from 'cheerio';
-import RecipeRoute from '../scraper_.recipe/route';
 
 interface BaseRecipe {
   name: string;
@@ -54,7 +53,6 @@ interface NutritionInformation {
   servingSize: string;
 }
 
-// Define interface for partial recipe data in JSON-LD format
 interface PartialRecipeJSONLD extends BaseRecipe {
   thumbnailUrl?: string;
   image?: string | string[] | ImageObject | ImageObject[];
@@ -68,37 +66,43 @@ interface PartialRecipeJSONLD extends BaseRecipe {
 
 // Function to fetch the HTML content of a recipe page
 export async function fetchRecipePage(url: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-  return response.text();
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return response.text();
+  } catch (error) {
+    console.error('Error fetching recipe page:', error);
+    throw error;
+  }
 }
 
 // Function to find the JSON-LD script tag containing recipe data
-export function findRecipeJsonLd(
+function findRecipeJsonLd(
   scriptTags: Cheerio<Element>
 ): PartialRecipeJSONLD | null {
-  // Iterate over each script tag
   for (const scriptTag of scriptTags.toArray()) {
     try {
       const childNode = scriptTag.firstChild;
       if (childNode && childNode.type === 'text') {
         const parsedJson = JSON.parse(childNode.data as string);
-        // Check if the JSON-LD contains a recipe
-        if (parsedJson['@type']?.includes('Recipe'))
+        if (parsedJson['@type']?.includes('Recipe')) {
           return parsedJson as PartialRecipeJSONLD;
-        // If the JSON-LD is an array or has a graph property, search within it
+        }
         if (Array.isArray(parsedJson) || parsedJson['@graph']) {
           const recipeJsonArray = Array.isArray(parsedJson)
             ? parsedJson
             : parsedJson['@graph'];
           for (const item of recipeJsonArray) {
-            if (item['@type']?.includes('Recipe'))
+            if (item['@type']?.includes('Recipe')) {
               return item as PartialRecipeJSONLD;
+            }
           }
         }
       }
     } catch (error) {
-      console.warn('Error parsing JSON-LD script:', error);
+      console.error('Error parsing JSON-LD script:', error);
     }
   }
   return null;
@@ -113,30 +117,11 @@ export function extractRecipeDataFromHTML(html: string): Recipe | null {
 }
 
 // Function to parse JSON-LD data into a full Recipe object
-export function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
+function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
   const imageUrl = determineImageUrl(jsonData.image, jsonData.thumbnailUrl);
 
-  // Flatten the recipeInstructions array to handle double arrays
   const flattenedInstructions = jsonData.recipeInstructions?.flat() ?? [];
-
-  const instructions = flattenedInstructions.flatMap((instruction) => {
-    if (typeof instruction === 'string') {
-      return decodeHtmlEntities(instruction);
-    } else if (instruction['@type'] === 'HowToSection') {
-      return (
-        instruction.itemListElement?.map((item) => {
-          return decodeHtmlEntities(item.text);
-        }) ?? []
-      );
-    } else if (
-      typeof instruction === 'object' &&
-      instruction['@type'] === 'HowToStep'
-    ) {
-      // Now TypeScript knows that instruction is an object with a 'text' property
-      return decodeHtmlEntities(instruction.text);
-    }
-    return [];
-  });
+  const instructions = flattenInstructionsArray(flattenedInstructions);
 
   const ingredients = jsonData.recipeIngredient?.map(decodeHtmlEntities) ?? [];
   const description = decodeHtmlEntities(jsonData.description);
@@ -149,6 +134,10 @@ export function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
     imageUrl,
     instructions,
     ingredients,
+    cuisine: jsonData.recipeCuisine,
+    category: jsonData.recipeCategory,
+    aggregateRating: jsonData.aggregateRating,
+    nutrition: jsonData.nutrition,
   };
 }
 
@@ -174,6 +163,29 @@ function determineImageUrl(
   }
 
   return fallbackUrl ?? '';
+}
+
+// Helper function to flatten the instructions array
+function flattenInstructionsArray(
+  instructions: (string | Instruction)[]
+): (string | Instruction)[] {
+  return instructions.flatMap((instruction) => {
+    if (typeof instruction === 'string') {
+      return decodeHtmlEntities(instruction);
+    } else if (instruction['@type'] === 'HowToSection') {
+      return (
+        instruction.itemListElement?.map((item) => {
+          return decodeHtmlEntities(item.text);
+        }) ?? []
+      );
+    } else if (
+      typeof instruction === 'object' &&
+      instruction['@type'] === 'HowToStep'
+    ) {
+      return decodeHtmlEntities(instruction.text);
+    }
+    return [];
+  });
 }
 
 // Helper function to decode HTML entities in a string
