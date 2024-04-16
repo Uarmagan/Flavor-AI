@@ -1,5 +1,5 @@
 {
-  "name": "my-remix-app",
+  "name": "flavor-recipes",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -32,7 +32,7 @@
     "@types/react-dom": "^18.2.24",
     "@typescript-eslint/eslint-plugin": "^7.6.0",
     "autoprefixer": "^10.4.19",
-    "eslint": "^9.0.0",
+    "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",
