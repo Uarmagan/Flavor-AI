@@ -30,21 +30,9 @@ export const meta: MetaFunction = () => {
     { name: 'description', content: 'Welcome to Remix!' },
   ];
 };
-
 export default function Index() {
   const fetcher = useFetcher<Recipe>();
   const isScraping = fetcher.state === 'submitting';
-  const [showRecipe, setShowRecipe] = useState(false);
-
-  useEffect(() => {
-    if (fetcher.data && !isScraping) {
-      setShowRecipe(true);
-    }
-  }, [fetcher.data, isScraping]);
-
-  const transitionStyle = showRecipe
-    ? 'transition-opacity duration-300 ease-in opacity-100'
-    : ' opacity-0';
 
   return (
     <div className='flex items-start justify-center h-fit flex-col'>
@@ -70,11 +58,13 @@ export default function Index() {
         </fetcher.Form>
       </div>
 
-      {fetcher.data && (
-        <div className={transitionStyle}>
-          <RecipeView recipeData={fetcher.data} />
-        </div>
-      )}
+      <div
+        className={`transition-opacity duration-300 ${
+          fetcher.data && !isScraping ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        {fetcher.data && <RecipeView recipeData={fetcher.data} />}
+      </div>
     </div>
   );
 }
