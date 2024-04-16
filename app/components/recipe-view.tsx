@@ -1,6 +1,6 @@
 import { AspectRatio } from './ui/aspect-ratio';
 import { Card, CardContent } from './ui/card';
-import { Instruction, Recipe } from '~/types/recipe';
+import {  Recipe } from '~/types/recipe';
 export function RecipeView({ recipeData }: { recipeData: Recipe }) {
   const hasIngredients = recipeData.ingredients?.length > 0;
   const hasInstructions = recipeData.instructions?.length > 0;

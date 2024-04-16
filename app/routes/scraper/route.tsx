@@ -36,16 +36,23 @@ export default function Index() {
 
   return (
     <div className='flex items-start justify-center h-fit flex-col'>
-      <div className='flex flex-col items-start mx-auto pt-10'>
-        <h2 className='text-2xl font-bold mb-4 font-oswald'>
-          The Recipe Scraper
-        </h2>
-        <fetcher.Form method='post' className='w-full flex gap-x-2'>
+      <div className='flex flex-col items-center w-full pt-10'>
+        <div className='w-full flex justify-center'>
+          <div className='max-w-sm sm:max-w-xl w-full'>
+            <h2 className='text-2xl font-bold mb-4 font-oswald text-left'>
+              The Recipe Scraper
+            </h2>
+          </div>
+        </div>
+        <fetcher.Form
+          method='post'
+          className='gap-x-2 flex w-full max-w-sm sm:max-w-xl items-center space-x-2'
+        >
           <Input
             type='text'
             placeholder='Enter Recipe URL'
             name='url'
-            className='w-[400px] tracking-wide'
+            className='tracking-wide'
           />
           <Button
             type='submit'
