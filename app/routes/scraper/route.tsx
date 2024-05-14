@@ -1,6 +1,5 @@
 import { ActionFunction, MetaFunction, json } from '@remix-run/node';
 import { useFetcher } from '@remix-run/react';
-import { useState, useEffect } from 'react';
 import { RecipeView } from '~/components/recipe-view';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';

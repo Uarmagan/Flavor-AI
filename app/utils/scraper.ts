@@ -6,27 +6,60 @@ import {
   Instruction,
 } from '~/types/recipe';
 
-type childNode = {
+type ChildNode = {
   type: string;
   data: string;
 };
 
+const htmlEntities: Record<string, string> = {
+  '&amp;': '&',
+  '&quot;': '"',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&#8211;': '-',
+  '&hellip;': '…',
+  '&#039;': "'",
+  '&nbsp;': ' ',
+  '&apos;': "'",
+  '&cent;': '¢',
+  '&pound;': '£',
+  '&yen;': '¥',
+  '&euro;': '€',
+  '&copy;': '©',
+  '&reg;': '®',
+};
+
+function decodeHtmlEntities(str: string): string {
+  return str.replace(
+    /&[a-zA-Z0-9#]+;/g,
+    (entity) => htmlEntities[entity] || entity
+  );
+}
+
 export async function fetchRecipePage(url: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP error! Status: ${response.status}`);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return await response.text();
+  } catch (error) {
+    console.error(`Failed to fetch recipe page: ${error}`);
+    throw new Error(`Unable to fetch ${url}`);
   }
-  return response.text();
 }
 
 function findRecipeJsonLd(
   scriptTags: Cheerio<Element>
 ): PartialRecipeJSONLD | null {
   for (const scriptTag of scriptTags.toArray()) {
-    const childNode = scriptTag.firstChild as childNode | null;
+    const childNode = scriptTag.firstChild as ChildNode | null;
     if (childNode?.type === 'text') {
       try {
-        const parsedJson = JSON.parse(childNode.data as string);
+        const parsedJson = JSON.parse(childNode.data) as Record<
+          string,
+          unknown
+        >;
         const recipeData = extractRecipeData(parsedJson);
         if (recipeData) {
           return recipeData;
@@ -39,21 +72,24 @@ function findRecipeJsonLd(
   return null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractRecipeData(jsonData: any): PartialRecipeJSONLD | null {
-  if (isPartialRecipeJSONLD(jsonData)) {
-    return jsonData;
+function extractRecipeData(data: unknown): PartialRecipeJSONLD | null {
+  if (isPartialRecipeJSONLD(data)) {
+    return data;
   }
-  if (Array.isArray(jsonData)) {
-    const recipeItem = jsonData.find(isPartialRecipeJSONLD);
-    if (recipeItem) {
-      return recipeItem;
-    }
-  }
-  if (Array.isArray(jsonData['@graph'])) {
-    for (const item of jsonData['@graph']) {
+  const jsonData = Array.isArray(data) ? data : [data];
+  for (const item of jsonData) {
+    if (typeof item === 'object' && item !== null) {
       if (isPartialRecipeJSONLD(item)) {
         return item;
+      }
+      // Deep traversal for nested objects
+      for (const key in item) {
+        if (key in item) {
+          const nestedData = extractRecipeData(item[key]);
+          if (nestedData) {
+            return nestedData;
+          }
+        }
       }
     }
   }
@@ -72,28 +108,27 @@ function isPartialRecipeJSONLD(obj: unknown): obj is PartialRecipeJSONLD {
 }
 
 export function extractRecipeDataFromHTML(html: string): Recipe | null {
-  const $ = load(html);
-  const scriptTags = $('script[type="application/ld+json"]');
-  const recipeJson = findRecipeJsonLd(scriptTags);
-  return recipeJson ? parseRecipeJson(recipeJson) : null;
+  try {
+    const $ = load(html);
+    const scriptTags = $('script[type="application/ld+json"]');
+    const recipeJson = findRecipeJsonLd(scriptTags);
+    return recipeJson ? parseRecipeJson(recipeJson) : null;
+  } catch (error) {
+    console.error(`Error extracting recipe data from HTML: ${error}`);
+    return null;
+  }
 }
 
 function parseRecipeJson(jsonData: PartialRecipeJSONLD): Recipe {
   const imageUrl = determineImageUrl(jsonData.image, jsonData.thumbnailUrl);
-  const ingredients = (jsonData.recipeIngredient ?? []).map(decodeHtmlEntities);
-  const instructions = flattenInstructionsArray(
-    jsonData.recipeInstructions ?? []
-  );
-  const description = decodeHtmlEntities(jsonData.description ?? '');
-
   return {
     name: jsonData.name,
     keywords: jsonData.keywords,
     url: jsonData.url,
-    description,
+    description: decodeHtmlEntities(jsonData.description ?? ''),
     imageUrl,
-    instructions,
-    ingredients,
+    instructions: flattenInstructionsArray(jsonData.recipeInstructions ?? []),
+    ingredients: (jsonData.recipeIngredient ?? []).map(decodeHtmlEntities),
     cuisine: jsonData.recipeCuisine,
     category: jsonData.recipeCategory,
     aggregateRating: jsonData.aggregateRating,
@@ -126,16 +161,20 @@ function flattenInstructionsArray(
     if (typeof instruction === 'string') {
       return decodeHtmlEntities(instruction);
     }
-    if (isHowToSection(instruction)) {
-      return (instruction.itemListElement ?? []).map((item) =>
-        decodeHtmlEntities(item.text)
-      );
-    }
-    if (isHowToStep(instruction)) {
-      return decodeHtmlEntities((instruction as Instruction).text);
-    }
-    return [];
+    return parseInstruction(instruction);
   });
+}
+
+function parseInstruction(instruction: Instruction): string[] {
+  if (isHowToSection(instruction)) {
+    return (instruction.itemListElement ?? []).map((item) =>
+      decodeHtmlEntities(item.text)
+    );
+  }
+  if (isHowToStep(instruction)) {
+    return [decodeHtmlEntities((instruction as Instruction).text)];
+  }
+  return [];
 }
 
 function isHowToSection(obj: unknown): obj is Instruction {
@@ -154,15 +193,4 @@ function isHowToStep(obj: unknown): obj is Instruction {
     '@type' in obj &&
     obj['@type'] === 'HowToStep'
   );
-}
-
-function decodeHtmlEntities(str: string): string {
-  return str
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#8211;/g, '-')
-    .replace(/&hellip;/g, '…')
-    .replace(/&#039;/g, "'");
 }
